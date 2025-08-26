@@ -1,35 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Fragment } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "./components/Navbar";
 
-function App() {
-  const [count, setCount] = useState(0)
+// Vistas desde layouts
+import Home from "./layouts/home/index";
 
+import { ProductProvider } from "./context/ProductContext";
+import ProductRoutes from "./layouts/products/index";
+
+import UserRoutes from './layouts/users/index';
+import { UserProvider } from './context/UserContext'
+
+import { AuthProvider } from "./context/AuthContext";
+import LoginForm from "./layouts/auth/LoginForm";
+import RegisterForm from "./layouts/auth/RegisterForm";
+
+import PrivateRoute from "./utils/PrivateRoute";
+import PublicRoute from "./utils/PublicRoute";
+import AdminRoute from "./utils/AdminRoute";
+
+import "./App.css";
+import "primereact/resources/themes/lara-dark-indigo/theme.css";
+import "primereact/resources/primereact.min.css";
+import "primeicons/primeicons.css";
+
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <AuthProvider>
+        <Fragment>
+          <Navbar />
+          <Routes>
+            {/* Home siempre accesible */}
+            <Route path="/" element={<Home />} />
 
-export default App
+            {/* Rutas públicas */}
+            <Route element={<PublicRoute />}>
+              <Route path="/inicio-sesion" element={<LoginForm />} />
+              <Route path="/registro" element={<RegisterForm />} />
+            </Route>
+
+            {/* Rutas privadas */}
+            <Route element={<PrivateRoute />}>
+              {/* Productos → accesible a cualquier usuario logueado */}
+              <Route
+                path="/productos/*"
+                element={
+                  <ProductProvider>
+                    <ProductRoutes />
+                  </ProductProvider>
+                }
+              />
+
+              {/* Usuarios → accesible solo a admins */}
+              <Route element={<AdminRoute />}>
+                <Route
+                  path="/usuarios/*"
+                  element={
+                    <UserProvider>
+                      <UserRoutes />
+                    </UserProvider>
+                  }
+                />
+              </Route>
+            </Route>
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Fragment>
+      </AuthProvider>
+    </Router>
+  );
+}
